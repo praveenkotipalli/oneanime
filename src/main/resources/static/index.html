@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneAnime</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: url('https://static0.gamerantimages.com/wordpress/wp-content/uploads/2024/03/toji-in-jjk.jpg') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(2px);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input, button {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+        }
+
+        input[type="text"], input[type="file"] {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        button {
+            background: #ff6f61;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #ff3b2d;
+        }
+
+        .character-photo {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        li img {
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+        }
+
+        li button {
+            margin-left: 10px;
+            background: transparent;
+            border: 2px solid #ff6f61;
+            padding: 5px 10px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        li button:hover {
+            background: #ff6f61;
+            color: #ffffff;
+        }
+    </style>
+    <script>
+        // JavaScript functions remain unchanged
+        async function fetchCharacters() {
+            const response = await fetch('/api/characters');
+            const characters = await response.json();
+            const list = document.getElementById('character-list');
+            list.innerHTML = '';
+            characters.forEach(character => {
+                list.innerHTML += `
+                    <li>
+                        <img src="${character.photoUrl}" class="character-photo" alt="${character.name}" />
+                        <div>
+                            ${character.name} - ${character.animeName}
+                        </div>
+                        <div>
+                            <button onclick="editCharacter(${character.id})">Edit</button>
+                            <button onclick="deleteCharacter(${character.id})">Delete</button>
+                        </div>
+                    </li>`;
+            });
+        }
+
+        async function addCharacter() {
+            const name = document.getElementById('name').value;
+            const animeName = document.getElementById('animeName').value;
+            const photoInput = document.getElementById('photo');
+            const photo = photoInput.files[0];
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('animeName', animeName);
+            formData.append('photo', photo);
+
+            await fetch('/api/characters', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearForm();
+            fetchCharacters();
+        }
+
+        async function updateCharacter() {
+            const id = document.getElementById('characterId').value;
+            const name = document.getElementById('name').value;
+            const animeName = document.getElementById('animeName').value;
+            const photoInput = document.getElementById('photo');
+            const photo = photoInput.files[0];
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('animeName', animeName);
+            if (photo) formData.append('photo', photo);
+
+            await fetch(`/api/characters/${id}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            clearForm();
+            fetchCharacters();
+        }
+
+        async function deleteCharacter(id) {
+            await fetch(`/api/characters/${id}`, {
+                method: 'DELETE'
+            });
+            fetchCharacters();
+        }
+
+        async function editCharacter(id) {
+            const response = await fetch(`/api/characters/${id}`);
+            const character = await response.json();
+            document.getElementById('characterId').value = character.id;
+            document.getElementById('name').value = character.name;
+            document.getElementById('animeName').value = character.animeName;
+            document.getElementById('photo').value = ''; // Clear file input
+            document.getElementById('updateButton').style.display = 'inline';
+            document.getElementById('addButton').style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('characterId').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('animeName').value = '';
+            document.getElementById('photo').value = '';
+            document.getElementById('updateButton').style.display = 'none';
+            document.getElementById('addButton').style.display = 'inline';
+        }
+
+        window.onload = fetchCharacters;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>OneAnime</h1>
+        <form id="character-form" enctype="multipart/form-data">
+            <input id="characterId" type="hidden" />
+            <input id="name" placeholder="Character Name" />
+            <input id="animeName" placeholder="Anime Name" />
+            <input id="photo" type="file" />
+            <button id="addButton" type="button" onclick="addCharacter()">Add Character</button>
+            <button id="updateButton" style="display:none;" type="button" onclick="updateCharacter()">Update Character</button>
+        </form>
+        <ul id="character-list"></ul>
+    </div>
+</body>
+</html>
